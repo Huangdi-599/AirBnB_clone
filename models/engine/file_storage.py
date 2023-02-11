@@ -1,7 +1,9 @@
+#!/usr/bin/python3
 """ This file imports code from json, datetime, and pathlib """
 import json
 from models.base_model import BaseModel
 
+""" FileStorage class. Stores stuff into a JSON file """
 
 class FileStorage:
     """ FileStorage class """

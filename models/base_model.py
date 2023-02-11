@@ -1,8 +1,11 @@
+#!/usr/bin/python3
+""" This file imports code found in uuid and datetime
+as well as the variable storage from __init__.py """
 import uuid
 from datetime import datetime
 import models
 
-
+""" base_model.py """
 class BaseModel:
     """Base Model Class"""
     def __init__(self, *args, **kwargs):

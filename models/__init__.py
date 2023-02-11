@@ -3,6 +3,5 @@
 from models.engine.file_storage import FileStorage
 """ Creates and reloads the variable storage """
 
-
 storage = FileStorage()
 storage.reload()
