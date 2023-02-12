@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 
 import models
-""" base_model.py """
+
 
 class BaseModel:
     """BaseModel Class"""
