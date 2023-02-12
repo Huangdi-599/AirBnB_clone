@@ -1,40 +1,72 @@
 #!/usr/bin/python3
-""" This file imports code from json, datetime, and pathlib """
+"""
+module containing FileStorage used for file storage
+"""
 import json
-from models.base_model import BaseModel
+import models
 
-""" FileStorage class. Stores stuff into a JSON file """
 
 class FileStorage:
-    """ FileStorage class """
+    """
+    serializes and deserializes instances to and from JSON file
+    saved into file_path
+
+    """
+
     __file_path = "file.json"
     __objects = {}
 
-    def all(self):
-        """ All method. Simply returns the dictionary """
-        return FileStorage.__objects
+    def all(self, cls=None):
+        """
+        returns a dictionary containing every object
+        """
+        if (not cls):
+            return self.__objects
+        result = {}
+        for key in self.__objects.keys():
+            if (key.split(".")[0] == cls.__name__):
+                result.update({key: self.__objects[key]})
+        return result
 
     def new(self, obj):
-        """ New method. Fills in our dictionary """
-        FileStorage.__objects[obj.__class__.__name__ + '.' + obj.id] = obj
+        """
+        creates a new object and saves it to __objects
+        """
+        key = "{}.{}".format(type(obj).__name__, obj.id)
+        self.__objects[key] = obj
 
     def save(self):
-        """ Save method. Saves/serializes the dictionary to our JSON file """
-        with open(FileStorage.__file_path, 'w') as f:
-            obj_dict = {}
-            for key, value in FileStorage.__objects.items():
-                obj_dict[key] = value.to_dict()
-            json.dump(obj_dict, f)
+        """
+        update the JSON file to reflect any change in the objects
+        """
+        temp = {}
+        for id, obj in self.__objects.items():
+            temp[id] = obj.to_dict()
+        with open(self.__file_path, "w") as json_file:
+            json.dump(temp, json_file)
 
     def reload(self):
-        """ Reload method. Loads/deserializes the dictionary from
-        our JSON file """
+        """
+        update __objects dict to restore previously created objects
+        """
         try:
-            with open(FileStorage.__file_path, 'r') as f:
-                FileStorage.__objects = {}
-                obj_dict = json.load(f)
-                for key, value in obj_dict.items():
-                    cls_name, obj_id = key.split('.')
-                    FileStorage.__objects[key] = eval(cls_name)(**value)
-        except FileNotFoundError:
+            with open(self.__file_path, "r") as json_file:
+                temp = json.load(json_file)
+            for id, dict in temp.items():
+                temp_instance = models.dummy_classes[dict["__class__"]](**dict)
+                self.__objects[id] = temp_instance
+        except:
             pass
+
+    def close(self):
+        """display our HBNB data
+        """
+        self.reload()
+
+    def delete(self, obj=None):
+        """
+            delete obj from __objects if it’s inside - if obj is None,
+            the method should not do anything
+        """
+        if (obj):
+            self.__objects.pop("{}.{}".format(type(obj).__name__, obj.id))
