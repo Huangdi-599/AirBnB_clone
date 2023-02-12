@@ -1,15 +1,10 @@
 #!/usr/bin/python3
-"""Module base_model
-
-This Module contains a definition for Place Class
-"""
-
+"""Defines the Place class."""
 from models.base_model import BaseModel
 
 
 class Place(BaseModel):
-    """A class that represents a place
-
+    """Represent a place.
     Attributes:
         city_id (str): The City id.
         user_id (str): The User id.
