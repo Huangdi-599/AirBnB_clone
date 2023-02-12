@@ -1,42 +1,98 @@
-## AirBnB clone - Web static.
----
-### Background Context
+# AirBnB Clone - Web Static 
 
-Now that you have a command interpreter for managing your AirBnB objects, it’s time to make them alive!
+This static pages represent a static versions of the AirBnB Clone website. Each numbered page represents a progressive development of the design in which incremental changes are reflected.
 
-Before developing a big and complex web application, we will build the front end step-by-step.
+## Live Demos - #mandatory
 
+#### 0. Inline styling
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/0-index.html">
+0-Index.html
+</a>
+<br />
+<br />
 
-##### The first step is to “design” / “sketch” / “prototype” each element:
+#### 1. Head styling
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/1-index.html">
+1-Index.html
+</a>
+<br />
+<br />
 
-~~~
-Create simple HTML static pages
-Style guide
-Fake contents
-No Javascript
-No data loaded from anything
-~~~
----
+#### 2. CSS files
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/2-index.html">
+2-Index.html
+</a>
+<br />
+<br />
 
-#### During this project, you will learn how to manipulate HTML and CSS languages. HTML is the structure of your page, it should be the first thing to write. CSS is the styling of your page, the design. I really encourage you to fix your HTML part before starting the styling. Indeed, without any structure, you can’t apply any design.
+#### 3. Zoning
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/3-index.html">
+3-Index.html
+</a>
+<br />
+<br />
 
-### Learning Objectives
-#### At the end of this project, you are expected to be able to explain to anyone, without the help of Google:
+#### 4. Search
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/4-index.html">
+4-Index.html
+</a>
+<br />
+<br />
 
-#### General
-~~~
-What is HTML
-How to create an HTML page
-What is a markup language
-What is the DOM
-What is an element / tag
-What is an attribute
-How does the browser load a webpage
-What is CSS
-How to add style to an element
-What is a class
-What is a selector
-How to compute CSS Specificity Value
-What are Box properties in CSS
-~~~
+#### 5. Filters for places
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/5-index.html">
+5-Index.html
+</a>
+<br />
+<br />
 
+#### 6. Popover on hovering filters
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/6-index.html">
+6-Index.html
+</a>
+<br />
+<br />
+
+#### 7. Displaying results
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/7-index.html">
+7-Index.html
+</a>
+<br />
+<br />
+
+#### 8. More details on places
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/8-index.html">
+8-Index.html
+</a>
+
+## Live Demos - #advanced
+
+#### 9. Full details on places
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/100-index.html">
+100-Index.html
+</a>
+<br />
+<br />
+
+#### 10. Flex
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/101-index.html">
+101-Index.html
+</a>
+<br />
+<br />
+
+#### 11. Responsiveness
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/102-index.html">
+102-Index.html
+</a>
+<br />
+<br />
+
+#### 12. Accessibility
+<a style="background-color: #3498db; color: #FFF; padding: 8px; border-radius: 6px" href="https://kalbetre-alx.github.io/AirBnB_clone/web_static/103-index.html">
+103-Index.html
+</a>
+<br />
+<br />
+## Authors
+Kalkidan Betre

@@ -1,344 +1,112 @@
 #!/usr/bin/python3
+"""Module test_review
 
-"""
-    Unit tests for the Review model.
+This Module contains a tests for Review Class
 """
 
-from datetime import datetime
-import io
-from models.base_model import BaseModel
-from models.review import Review
-from os import path, remove
+import sys
 import unittest
-from unittest.mock import patch
-from time import sleep
+import uuid
+from datetime import datetime
+from io import StringIO
+
+import pycodestyle
+from models import review
+from tests.test_models.test_base_model import BaseModel
+
+Review = review.Review
 
 
-class Test_instanceReview(unittest.TestCase):
+class TestReviewDocsAndStyle(unittest.TestCase):
+    """Tests Review class for documentation and style conformance"""
 
-    """ Class for unittest of instance check """
+    def test_pycodestyle(self):
+        """Tests compliance with pycodestyle"""
+        style = pycodestyle.StyleGuide(quiet=False)
+        result = style.check_files(
+            ["models/review.py", "tests/test_models/test_review.py"])
+        self.assertEqual(result.total_errors, 0)
 
-    def tearDown(self):
-        """ Tear down for all methods """
-        try:
-            remove("file.json")
-        except:
-            pass
+    def test_module_docstring(self):
+        """Tests whether the module is documented"""
+        self.assertTrue(len(review.__doc__) >= 1)
 
-    def test_instance(self):
-        """ Checks if user is instance of base_model """
-        b = Review()
-        self.assertTrue(isinstance(b, BaseModel))
+    def test_class_docstring(self):
+        """Tests whether the class is documented"""
+        self.assertTrue(len(Review.__doc__) >= 1)
 
-    def test_instance_args(self):
-        """ Checks if user with args is instance of base_model """
-        b = Review(123, "Hello", ["World"])
-        self.assertTrue(isinstance(b, BaseModel))
-
-    def test_instance_kwargs(self):
-        """ Checks if user with args is instance of base_model """
-        d = {"name": "Holberton"}
-        b = Review(**d)
-        self.assertTrue(isinstance(b, BaseModel))
+    def test_class_name(self):
+        """Test whether the class name is correct"""
+        self.assertEqual(Review.__name__, "Review")
 
 
-class Test_class_attrsReview(unittest.TestCase):
-
-    """ Class for checking if classa attr were set correctly """
-
-    def tearDown(self):
-        """ Tear down for all methods """
-        try:
-            remove("file.json")
-        except:
-            pass
-
-    def test_correct_classattr(self):
-        """ Checks if class attr are present """
-        b = Review()
-        attr = ["place_id", "user_id", "text"]
-        d = b.__dict__
-        for i in attr:
-            self.assertFalse(i in d)
-            self.assertTrue(hasattr(b, i))
-            self.assertEqual(getattr(b, i, False), "")
-
-    def test_set_attr(self):
-        """ Check settings instance attr and accessing class attr """
-        b = Review()
-        attr = ["place_id", "user_id", "text"]
-        value = ["123", "456", "Random"]
-        for i, j in zip(attr, value):
-            setattr(b, i, j)
-        d = b.__dict__
-        for i, j, in zip(attr, value):
-            self.assertEqual(getattr(b, i, False), j)
-        for i in attr:
-            self.assertEqual(getattr(b.__class__, i, False), "")
-
-
-class Test_initReview(unittest.TestCase):
-    """ Class for unittest of __init__ """
+class TestReview(unittest.TestCase):
+    """Test cases for Review Class"""
 
     def setUp(self):
-        """ Set up for all methods """
-        pass
+        """creates a test object for other tests"""
+        self.test_obj = Review()
+        self.test_obj.place_id = str(uuid.uuid4())
+        self.test_obj.user_id = str(uuid.uuid4())
+        self.test_obj.text = "fantastic review"
 
-    def tearDown(self):
-        """ Tear down for all methods """
-        try:
-            remove("file.json")
-        except:
-            pass
+    def test_review_is_subclass_of_base_model(self):
+        self.assertTrue(issubclass(Review, BaseModel))
 
-    def test_instance_creation_no_arg(self):
-        """ No arguments """
-        b1 = Review()
-        self.assertTrue(hasattr(b1, "id"))
-        self.assertTrue(hasattr(b1, "created_at"))
-        self.assertTrue(hasattr(b1, "updated_at"))
+    def test_public_attributes_exist(self):
+        """tests wether the public instance attributes exist."""
+        req_att = ["id", "created_at", "updated_at",
+                   "place_id", "user_id", "text"]
+        for attrib in req_att:
+            self.assertTrue(hasattr(self.test_obj, attrib))
 
-    def test_attr_types(self):
-        """ No arguments """
-        b1 = Review()
-        self.assertEqual(type(b1.id), str)
-        self.assertEqual(type(b1.created_at), datetime)
-        self.assertEqual(type(b1.updated_at), datetime)
+    def test_public_attributes_have_correct_type(self):
+        """tests wether the public instance attributes exist."""
+        req_att = ["place_id", "user_id", "text"]
+        for attrib in req_att:
+            self.assertTrue(type(getattr(self.test_obj, attrib)), str)
 
-    def test_id_diff_for_each_instance(self):
-        """ Checks If every id generated is different """
-        b1 = Review()
-        b2 = Review()
-        b3 = Review()
-        b4 = Review()
-        self.assertFalse(b1.id == b2.id)
-        self.assertFalse(b1.id == b3.id)
-        self.assertFalse(b1.id == b4.id)
-        self.assertFalse(b2.id == b3.id)
-        self.assertFalse(b2.id == b4.id)
-        self.assertFalse(b3.id == b4.id)
+    def test_bas_str_should_print_formatted_output(self):
+        """__str__ should print [<class name>] (<self.id>) <self.__dict__>"""
+        self.test_obj.my_number = 89
+        cls_name = Review.__name__
+        id = self.test_obj.id
+        expected = f"[{cls_name}] ({id}) {self.test_obj.__dict__}"
+        output = StringIO()
+        sys.stdout = output
+        print(self.test_obj)
+        sys.stdout = sys.__stdout__
+        self.assertEqual(output.getvalue().strip("\n"), expected)
 
-    " ===========================  ARGS  ================================"
+    def test_to_dict_returns_a_dictionary_of_attributes(self):
+        """to_dict should return a dictionary containing all key/value of
+        self.__dict__
+        """
+        temp_dict = self.test_obj.to_dict()
+        self.assertIsInstance(temp_dict, dict)
+        keys = temp_dict.keys()
 
-    def test_args(self):
-        """ Tests that args works """
-        b1 = Review(1)
-        b2 = Review(1, "hola")
-        b3 = Review(1, "hola", (1, 2))
-        b4 = Review(1, "hola", (1, 2), [1, 2])
+        for k, v in self.test_obj.__dict__.items():
+            self.assertIn(k, keys)
+            if not isinstance(self.test_obj.__dict__[k], datetime):
+                self.assertEqual(temp_dict[k], v)
 
-    def test_args_def_(self):
-        """ Tests that default attr are set even with args """
-        b1 = Review(1, "hola", (1, 2), [1, 2])
-        self.assertTrue(hasattr(b1, "id"))
-        self.assertTrue(hasattr(b1, "created_at"))
-        self.assertTrue(hasattr(b1, "updated_at"))
+    def test_to_dict_has_a_key_with_the_class_name(self):
+        """to_dict must have a key of __class__ with a value of the classes
+        name
+        """
+        temp_dict = self.test_obj.to_dict()
+        self.assertIn("__class__", temp_dict.keys())
+        self.assertEqual(temp_dict["__class__"],
+                         Review.__name__)
 
-    " =========================== KWARGS  =============================== "
+    def test_init_with_kwargs(self):
+        """test that Review can be constructed from kwargs"""
+        temp_obj_2 = Review(**self.test_obj.to_dict())
 
-    def test_instance_creation_kwarg(self):
-        """ Arguments in Kwarg """
-        d = {'id': '56d43177-cc5f-4d6c-a0c1-e167f8c27337',
-             'created_at': '2017-09-28T21:03:54.053212',
-             '__class__': 'Review',
-             'updated_at': '2017-09-28T21:03:54.056732'}
-        b1 = Review(**d)
-        self.assertTrue(hasattr(b1, "id"))
-        self.assertTrue(hasattr(b1, "created_at"))
-        self.assertTrue(hasattr(b1, "updated_at"))
-        self.assertTrue(hasattr(b1, "__class__"))
-        self.assertTrue(b1.__class__ not in b1.__dict__)
-
-        self.assertEqual(b1.id, '56d43177-cc5f-4d6c-a0c1-e167f8c27337')
-        self.assertEqual(b1.created_at.isoformat(),
-                         '2017-09-28T21:03:54.053212')
-        self.assertEqual(b1.updated_at.isoformat(),
-                         '2017-09-28T21:03:54.056732')
-
-    def test_no_default_args(self):
-        """ Checks if id and dates are created even if not in kwargs """
-        d = {"name": "Holberton"}
-        b1 = Review(**d)
-        self.assertTrue(hasattr(b1, "id"))
-        self.assertTrue(hasattr(b1, "created_at"))
-        self.assertTrue(hasattr(b1, "updated_at"))
-        self.assertEqual(b1.name, "Holberton")
-
-    def test_dates_str_to_datetime(self):
-        """ Checks that the proper conversion is made for datetimes """
-
-        d = {'id': '56d43177-cc5f-4d6c-a0c1-e167f8c27337',
-             'created_at': '2017-09-28T21:03:54.053212',
-             '__class__': 'Review',
-             'updated_at': '2017-09-28T21:03:54.056732'}
-        b1 = Review(**d)
-        self.assertEqual(b1.created_at.isoformat(),
-                         '2017-09-28T21:03:54.053212')
-        self.assertEqual(b1.updated_at.isoformat(),
-                         '2017-09-28T21:03:54.056732')
-        self.assertEqual(type(b1.created_at), datetime)
-        self.assertEqual(type(b1.updated_at), datetime)
-
-    def test_args_kwargs(self):
-        """ Tests that kwargs works even if there is args """
-
-        d = {'id': '56d43177-cc5f-4d6c-a0c1-e167f8c27337',
-             'created_at': '2017-09-28T21:03:54.053212',
-             '__class__': 'Review',
-             'updated_at': '2017-09-28T21:03:54.056732'}
-        b1 = Review(1, "Hello", ["World"], **d)
-        self.assertTrue(hasattr(b1, "id"))
-        self.assertTrue(hasattr(b1, "created_at"))
-        self.assertTrue(hasattr(b1, "updated_at"))
-        self.assertTrue(hasattr(b1, "__class__"))
-        self.assertTrue(b1.__class__ not in b1.__dict__)
-
-        self.assertEqual(b1.id, '56d43177-cc5f-4d6c-a0c1-e167f8c27337')
-        self.assertEqual(b1.created_at.isoformat(),
-                         '2017-09-28T21:03:54.053212')
-        self.assertEqual(b1.updated_at.isoformat(),
-                         '2017-09-28T21:03:54.056732')
+        for k, v in self.test_obj.__dict__.items():
+            self.assertEqual(v, temp_obj_2.__dict__[k])
 
 
-class Test_str__Review(unittest.TestCase):
-
-    """ Class for testing __str__ method """
-
-    def tearDown(self):
-        """ Tear down for all methods """
-        try:
-            remove("file.json")
-        except:
-            pass
-
-    def test_print(self):
-        """ Tests the __str__ method """
-        b1 = Review()
-        s = "[{:s}] ({:s}) {:s}\n"
-        s = s.format(b1.__class__.__name__, b1.id, str(b1.__dict__))
-        with patch('sys.stdout', new=io.StringIO()) as p:
-            print(b1)
-            st = p.getvalue()
-            self.assertEqual(st, s)
-
-    def test_print2(self):
-        """ Tests the __str__ method 2"""
-        b1 = Review()
-        b1.name = "Holberton"
-        b1.code = 123
-        s = "[{:s}] ({:s}) {:s}\n"
-        s = s.format(b1.__class__.__name__, b1.id, str(b1.__dict__))
-        with patch('sys.stdout', new=io.StringIO()) as p:
-            print(b1)
-            st = p.getvalue()
-            self.assertEqual(st, s)
-
-    def test_print_args(self):
-        """ Test __str__ with args """
-        b1 = Review(None, 1, ["A"])
-        b1.name = "Holberton"
-        b1.code = 123
-        s = "[{:s}] ({:s}) {:s}\n"
-        s = s.format(b1.__class__.__name__, b1.id, str(b1.__dict__))
-        with patch('sys.stdout', new=io.StringIO()) as p:
-            print(b1)
-            st = p.getvalue()
-            self.assertEqual(st, s)
-
-    def test_print_kwargs(self):
-
-        """ Test __str__ with prev set kwargs """
-        d = {'id': '56d43177-cc5f-4d6c-a0c1-e167f8c27337',
-             'created_at': '2017-09-28T21:03:54.053212',
-             '__class__': 'Review',
-             'updated_at': '2017-09-28T21:03:54.056732'}
-        b1 = Review(**d)
-        s = "[{:s}] ({:s}) {:s}\n"
-        s = s.format(b1.__class__.__name__, b1.id, str(b1.__dict__))
-        with patch('sys.stdout', new=io.StringIO()) as p:
-            print(b1)
-            st = p.getvalue()
-            self.assertEqual(st, s)
-
-
-class Test_saveReview(unittest.TestCase):
-
-    """ Class to test save method """
-
-    def tearDown(self):
-        """ Tear down for all methods """
-        try:
-            remove("file.json")
-        except:
-            pass
-
-    def test_save(self):
-        """ Tests that update_at time is updated """
-
-        b1 = Review()
-        crtime = b1.created_at
-        uptime = b1.updated_at
-        sleep(0.05)
-        b1.save()
-        self.assertFalse(uptime == b1.updated_at)
-        self.assertTrue(crtime == b1.created_at)
-
-    def test_type(self):
-        """ Checks that after save updated_at type is datetime """
-
-        b1 = Review()
-        b1.save()
-        self.assertEqual(type(b1.updated_at), datetime)
-        self.assertEqual(type(b1.created_at), datetime)
-
-
-class Test_to_dictReview(unittest.TestCase):
-
-    """ Class to test to_dict method """
-
-    def tearDown(self):
-        """ Tear down for all methods """
-        try:
-            remove("file.json")
-        except:
-            pass
-
-    def test_to_dict(self):
-        """ Checks for correct dictionary conversion """
-        b1 = Review()
-        b1.name = "Holberton"
-        b1.code = 123
-        d = {}
-        d["id"] = b1.id
-        d["created_at"] = b1.created_at.isoformat()
-        d["updated_at"] = b1.updated_at.isoformat()
-        d["name"] = b1.name
-        d["code"] = b1.code
-
-        dic = b1.to_dict()
-
-        self.assertEqual(d["id"], dic["id"])
-        self.assertEqual(d["created_at"], dic["created_at"])
-        self.assertEqual(d["updated_at"], dic["updated_at"])
-        self.assertEqual(d["name"], dic["name"])
-        self.assertEqual(d["code"], dic["code"])
-
-    def test_to_dict_class_dates(self):
-        """ Checks for correct dictionary conversion """
-        b1 = Review()
-        dic = b1.to_dict()
-        self.assertEqual(dic["__class__"], "Review")
-        self.assertEqual(type(dic["created_at"]), str)
-        self.assertEqual(type(dic["updated_at"]), str)
-
-    def test_isoformat(self):
-        """ Checks if date is converted to string in isoformat """
-        b1 = Review()
-        ctime = datetime.now()
-        uptime = datetime.now()
-        b1.created_at = ctime
-        b1.updated_at = uptime
-
-        dic = b1.to_dict()
-        self.assertEqual(dic["created_at"], ctime.isoformat())
-        self.assertEqual(dic["updated_at"], uptime.isoformat())
+if __name__ == "__main__":
+    unittest.main()

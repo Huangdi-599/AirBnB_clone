@@ -1,336 +1,176 @@
 #!/usr/bin/python3
-"""
-    Unit tests for BaseModel class.
+"""Module test_base_model
+
+This Module contains a tests for Base Class
 """
 
-from models.base_model import BaseModel
+import inspect
+import json
+import os
+import sys
 import unittest
 from datetime import datetime
-import io
-from time import sleep
-from unittest.mock import patch
-from os import path, remove
+from io import StringIO
+from uuid import UUID
+
+import pycodestyle
+from models import base_model
+from models.engine.file_storage import FileStorage
+
+BaseModel = base_model.BaseModel
 
 
-class Test_init(unittest.TestCase):
-    """
-        Class for testing __init__
-    """
+class TestBaseModelDocsAndStyle(unittest.TestCase):
+    """Tests Base class for documentation and style conformance"""
+
+    def test_pycodestyle(self):
+        """Tests compliance with pycodestyle"""
+        style = pycodestyle.StyleGuide(quiet=False)
+        result = style.check_files(
+            ["models/base_model.py", "tests/test_models/test_base_model.py"])
+        self.assertEqual(result.total_errors, 0)
+
+    def test_module_docstring(self):
+        """Tests whether the module is documented"""
+        self.assertTrue(len(base_model.__doc__) >= 1)
+
+    def test_class_docstring(self):
+        """Tests whether the class is documented"""
+        self.assertTrue(len(BaseModel.__doc__) >= 1)
+
+    def test_methods_docstring(self):
+        """Tests whether the class methods are documented"""
+        funcs = inspect.getmembers(BaseModel, inspect.isfunction)
+        for func in funcs:
+            self.assertTrue(len(func[1].__doc__) >= 1)
+
+    def test_class_name(self):
+        """Test whether the class name is correct"""
+        self.assertEqual(BaseModel.__name__, "BaseModel")
+
+
+class TestBaseModel(unittest.TestCase):
+    """Test cases for Base Class"""
+
     def setUp(self):
-        """
-            Set up for each test.
-        """
-        pass
+        """creates a test object for other tests"""
+        self.test_obj = BaseModel()
 
-    def tearDown(self):
-        """
-            Clean up after each test.
-        """
+    def test_public_attributes_exist(self):
+        """tests wether the public instance attributes - "id" "create_at" and
+        "updated_at" exist."""
+        req_att = ["id", "created_at", "updated_at"]
+        for attrib in req_att:
+            self.assertTrue(hasattr(self.test_obj, attrib))
+
+    def test_id_attribute_shall_be_uuid4(self):
+        """tests wether id attribute is of type string representation of
+        datetime"""
+        self.assertIsInstance(self.test_obj.id, str)
+
         try:
-            remove("file.json")
-        except FileNotFoundError:
-            pass
+            _ = UUID(self.test_obj.id, version=4)
+        except Exception:
+            self.assertTrue(False)
+        else:
+            self.assertTrue(True)
 
-    def test_instance_creation(self):
-        """
-            Test instance creation.
-        """
-        bm = BaseModel()
-        self.assertTrue(hasattr(bm, "id"))
-        self.assertTrue(hasattr(bm, "created_at"))
-        self.assertTrue(hasattr(bm, "updated_at"))
+    def test_datetime_attributes(self):
+        """tests if created_at and updated_at instance attributes are of
+        datetime type"""
+        self.assertIsInstance(self.test_obj.created_at, datetime)
+        self.assertIsInstance(self.test_obj.updated_at, datetime)
 
-    def test_attr_types(self):
-        """
-            Test attribute types.
-        """
-        bm = BaseModel()
-        self.assertEqual(bm.id, str)
-        self.assertEqual(bm.created_at, datetime)
-        self.assertEqual(bm.updated_at, datetime)
+    def test_bas_str_should_print_formatted_output(self):
+        """__str__ should print [<class name>] (<self.id>) <self.__dict__>"""
+        self.test_obj.my_number = 89
+        cls_name = BaseModel.__name__
+        id = self.test_obj.id
+        expected = f"[{cls_name}] ({id}) {self.test_obj.__dict__}"
+        output = StringIO()
+        sys.stdout = output
+        print(self.test_obj)
+        sys.stdout = sys.__stdout__
+        self.assertEqual(output.getvalue().strip("\n"), expected)
 
-    def test_id_unique(self):
+    def test_public_method_attributes_exist(self):
+        """tests wether public instance methods - "save" "to_dict" exist."""
+        req_att = ["save", "to_dict"]
+        for attrib in req_att:
+            self.assertTrue(hasattr(self.test_obj, attrib)
+                            and callable(getattr(self.test_obj, attrib)))
+
+    def test_save_method_updates_updated_at_value(self):
+        """save method shall update updated_at"""
+        old_date = self.test_obj.updated_at
+        self.test_obj.save()
+        self.assertIsInstance(old_date, datetime)
+        self.assertNotEqual(self.test_obj.updated_at, old_date)
+
+    def test_save_method_updates_storage(self):
+        """save method shall update storage"""
+        file_path = "file.json"
+        with open(file_path, 'w') as f:
+            json.dump({}, f)
+        storage = FileStorage()
+        storage.reload()
+        storage.new(self.test_obj)
+        storage.save()
+
+        old_date = self.test_obj.updated_at
+        self.test_obj.save()
+
+        storage.reload()
+        saved_obj = storage.all(
+        )[f"{self.test_obj.__class__.__name__}.{self.test_obj.id}"]
+
+        self.assertNotEqual(old_date, saved_obj.updated_at)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    def test_to_dict_returns_a_dictionary_of_attributes(self):
+        """to_dict should return a dictionary containing all key/value of
+        self.__dict__
         """
-            Test id uniqueness.
+        temp_dict = self.test_obj.to_dict()
+        self.assertIsInstance(temp_dict, dict)
+        keys = temp_dict.keys()
+
+        for k, v in self.test_obj.__dict__.items():
+            self.assertIn(k, keys)
+            if not isinstance(self.test_obj.__dict__[k], datetime):
+                self.assertEqual(temp_dict[k], v)
+
+    def test_to_dict_returns_a_new_dictionary_of_attributes(self):
+        """to_dict should return a copy of __dict__"""
+        temp_dict = self.test_obj.to_dict()
+        self.assertNotEqual(id(temp_dict), id(self.test_obj.__dict__))
+
+    def test_to_dict_has_a_key_with_the_class_name(self):
+        """to_dict must have a key of __class__ with a value of the classes
+        name
         """
-        bm1 = BaseModel()
-        bm2 = BaseModel()
-        bm3 = BaseModel()
-        bm4 = BaseModel()
-        self.assertFalse(bm1.id == bm2.id)
-        self.assertFalse(bm1.id == bm3.id)
-        self.assertFalse(bm1.id == bm4.id)
-        self.assertFalse(bm2.id == bm3.id)
-        self.assertFalse(bm2.id == bm4.id)
-        self.assertFalse(bm3.id == bm4.id)
+        temp_dict = self.test_obj.to_dict()
+        self.assertIn("__class__", temp_dict.keys())
+        self.assertEqual(temp_dict["__class__"],
+                         BaseModel.__name__)
 
-    def test_clargs(self):
-        """
-            Test that args is working.
-        """
-        bm1 = BaseModel(1)
-        bm2 = BaseModel(1, "Bendito")
-        bm3 = BaseModel(1, "Bendito", (1, 2))
-        bm4 = BaseModel(1, "Bendito", (1, 2), [1, 2])
+    def test_to_dict_formats_dates_with_isoformat(self):
+        """to_dict should store dates in isoformat"""
+        temp_dict = self.test_obj.to_dict()
 
-    def test_def_attr(self):
-        """
-            Test default attributes.
-        """
-        bm1 = BaseModel(1, "Bendito", (1, 2), [1, 2])
-        self.assertTrue(hasattr(bm1, "id"))
-        self.assertTrue(hasattr(bm1, "created_at"))
-        self.assertTrue(hasattr(bm1, "updated_at"))
+        for k, v in self.test_obj.__dict__.items():
+            if isinstance(self.test_obj.__dict__[k], datetime):
+                self.assertEqual(datetime.fromisoformat(temp_dict[k]), v)
 
-    def test_instantiation_with_kwargs(self):
-        """
-            Test instantiation with kwargs.
-        """
-        key_id = {"id": "43ff8bae-dbe6-4a99-bc27-6ffa7f26caef",
-                  "created_at": "2021-11-13T01:16:36.442329",
-                  "updated_at": "2021-11-13T01:16:36.442382",
-                  "class_": "BaseModel"}
-        bm1 = BaseModel(**key_id)
-        self.assertTrue(hasattr(bm1, "id"))
-        self.assertTrue(hasattr(bm1, "created_at"))
-        self.assertTrue(hasattr(bm1, "updated_at"))
-        self.assertTrue(hasattr(bm1, "__class__"))
-        self.assertTrue(bm1.__class__ not in bm1.__dict__)
-        self.assertEqual(bm1.id, key_id["id"])
-        self.assertEqual(bm1.created_at.isoformat(),
-                         key_id["created_at"])
-        self.assertEqual(bm1.updated_at.isoformat(),
-                         key_id["updated_at"])
+    def test_init_with_kwargs(self):
+        """test that BaseClass can be constructed from kwargs"""
+        temp_obj_2 = BaseModel(**self.test_obj.to_dict())
 
-    def test_instantiation_without_kwargs_and_args(self):
-        """
-            Test instantiation without kwargs and args.
-        """
-        data_m = {"name": "Bendito"}
-        bm1 = BaseModel()
-        self.assertTrue(hasattr(bm1, "id"))
-        self.assertTrue(hasattr(bm1, "created_at"))
-        self.assertTrue(hasattr(bm1, "updated_at"))
-        self.assertEqual(bm1.name, "Bendito")
+        for k, v in self.test_obj.__dict__.items():
+            self.assertEqual(v, temp_obj_2.__dict__[k])
 
-    def test_date_conv_to_str(self):
-        """
-            Test date conversion to string.
-        """
-        key_id = {"id": "43ff8bae-dbe6-4a99-bc27-6ffa7f26caef",
-                  "created_at": "2021-11-13T01:16:36.442329",
-                  "updated_at": "2021-11-13T01:16:36.442382",
-                  "class_": "BaseModel"}
-        bm1 = BaseModel(**key_id)
-        self.assertEqual(bm1.created_at.isoformat(),
-                         key_id["created_at"])
-        self.assertEqual(bm1.updated_at.isoformat(),
-                         key_id["updated_at"])
-        self.assertEqual(type(bm1.created_at), datetime)
-        self.assertEqual(type(bm1.updated_at), datetime)
 
-    def test_kwars_works_with_args(self):
-        """
-            Test kwargs works even in the
-            presence of args.
-        """
-        key_id = {"id": "43ff8bae-dbe6-4a99-bc27-6ffa7f26caef",
-                  "created_at": "2021-11-13T01:16:36.442329",
-                  "updated_at": "2021-11-13T01:16:36.442382",
-                  "class_": "BaseModel"}
-        bm1 = BaseModel(1, "Bendito", ["Francis"], **key_id)
-        self.assertTrue(hasattr(bm1, "id"))
-        self.assertTrue(hasattr(bm1, "created_at"))
-        self.assertTrue(hasattr(bm1, "updated_at"))
-        self.assertTrue(hasattr(bm1, "__class__"))
-        self.assertTrue(bm1.__class__ not in bm1.__dict__)
-        self.assertEqual(bm1.id, key_id["id"])
-        self.assertEqual(bm1.created_at.isoformat(),
-                         key_id["created_at"])
-        self.assertEqual(bm1.updated_at.isoformat(),
-                         key_id["updated_at"])
-
-    class Test_str__(unittest.TestCase):
-        """
-            Test __str__ method.
-        """
-        def setUp(self):
-            """
-                Set up.
-            """
-            pass
-
-        def tearDown(self):
-            """
-                Tear down.
-            """
-            try:
-                remove("file.json")
-            except:
-                pass
-
-        def test_print_uno(self):
-            """
-                Test __str__ method.
-            """
-            bm = BaseModel()
-            string = "[{:s}] ({:s}) {:s}\n"
-            string = string.format(bm.__class__.__name__,
-                                   bm.id,
-                                   str(bm.__dict__))
-            with patch("sys.stdout", new=io.StringIO()) as f:
-                print(bm)
-                str_test = f.getvalue()
-                self.assertEqual(str_test, string)
-
-        def test_print_dos(self):
-            """
-                Test __str__ method.
-            """
-            bm = BaseModel()
-            bm.name = "Bendito"
-            bm.code = 6969
-            string = "[{:s}] ({:s}) {:s}\n"
-            string = string.format(bm.__class__.__name__,
-                                   bm.id,
-                                   str(bm.__dict__))
-            with patch("sys.stdout", new=io.StringIO()) as f:
-                print(bm)
-                str_test = f.getvalue()
-                self.assertEqual(str_test, string)
-
-        def test_print_clargs(self):
-            """
-                Test __str__ method with clargs.
-            """
-            bm = BaseModel(None, 1, ["Bendito"])
-            bm.name = "Frances"
-            bm.code = 6969
-            string = "[{:s}] ({:s}) {:s}\n"
-            string = string.format(bm.__class__.__name__,
-                                   bm.id,
-                                   str(bm.__dict__))
-            with patch("sys.stdout", new=io.StringIO()) as f:
-                print(bm)
-                str_test = f.getvalue()
-                self.assertEqual(str_test, string)
-
-        def test_print_kwargs(self):
-            """
-                Test __str__ method with kwargs.
-            """
-            key_id = {"id": "43ff8bae-dbe6-4a99-bc27-6ffa7f26caef",
-                      "created_at": "2021-11-13T01:16:36.442329",
-                      "updated_at": "2021-11-13T01:16:36.442382",
-                      "class_": "BaseModel"}
-            bm = BaseModel(**key_id)
-            string = "[{:s}] ({:s}) {:s}\n"
-            string = string.format(bm.__class__.__name__,
-                                   bm.id,
-                                   str(bm.__dict__))
-            with patch("sys.stdout", new=io.StringIO()) as f:
-                print(bm)
-                str_test = f.getvalue()
-                self.assertEqual(str_test, string)
-
-    class Test_save(unittest.TestCase):
-        """
-            Test save method.
-        """
-        def setUp(self):
-            """
-                Set up.
-            """
-            pass
-
-        def tearDown(self):
-            """
-                Tear down.
-            """
-            try:
-                remove("file.json")
-            except:
-                pass
-
-        def test_save(self):
-            """
-                Test save method.
-            """
-            bm = BaseModel()
-            time_cr = bm.created_at
-            time_up = bm.updated_at
-            sleep(0.5)
-            bm.save()
-            self.assertFalse(time_up == bm.updated_at)
-            self.assertTrue(time_cr == bm.created_at)
-
-        def test_save_type(self):
-            """
-                Test that save method type is of datetime.
-            """
-            bm = BaseModel()
-            bm.save()
-            self.assertEqual(type(bm.created_at), datetime)
-            self.assertEqual(type(bm.updated_at), datetime)
-
-    class Test_to_dict(unittest.TestCase):
-        """
-            Test to_dict method.
-        """
-        def setUp(self):
-            """
-                Set up.
-            """
-            pass
-
-        def tearDown(self):
-            """
-                Tear down.
-            """
-            try:
-                remove("file.json")
-            except:
-                pass
-
-        def test_to_dict(self):
-            """
-                Test to_dict method.
-            """
-            bm = BaseModel()
-            bm.name = "Bendito"
-            bm.code = 6969
-            dada = {}
-            dada["id"] = bm.id
-            dada["created_at"] = bm.created_at.isoformat()
-            dada["updated_at"] = bm.updated_at.isoformat()
-            dada["name"] = bm.name
-            dada["code"] = bm.code
-            dada_dict = bm.to_dict()
-            self.assertEqual(dada["id"], dada_dict["id"])
-            self.assertEqual(dada["created_at"], dada_dict["created_at"])
-            self.assertEqual(dada["updated_at"], dada_dict["updated_at"])
-            self.assertEqual(dada["name"], dada_dict["name"])
-            self.assertEqual(dada["code"], dada_dict["code"])
-
-        def test_class_date_conv(self):
-            """
-                Test that to_dict method converts datetime to string.
-            """
-            bm = BaseModel()
-            dict = bm.to_dict()
-            self.assertEqual(dict["__class__"], "BaseModel")
-            self.assertEqual(type(dict["created_at"]), str)
-            self.assertEqual(type(dict["updated_at"]), str)
-
-        def test_date_isoformat(self):
-            """
-                Test that to_dict method converts datetime to string.
-            """
-            bm = BaseModel()
-            time_cr = datetime.now()
-            time_up = datetime.now()
-            bm.created_at = time_cr
-            bm.updated_at = time_up
-            dict = bm.to_dict()
-            self.assertEqual(dict["created_at"], time_cr.isoformat())
-            self.assertEqual(dict["updated_at"], time_up.isoformat())
+if __name__ == "__main__":
+    unittest.main()
