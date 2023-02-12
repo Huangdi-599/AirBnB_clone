@@ -9,7 +9,7 @@ import importlib
 import json
 import os
 import re
-
+""" FileStorage class. Stores stuff into a JSON file """
 
 class FileStorage:
     """FileStorage Class
